@@ -1,0 +1,1 @@
+f.spc(JSON.parse('{"revive-0-0":{"html":"","width":"","height":"","data_view":"true","data_order":"","data_mod":"","data_aid":149,"data_ideaid":""},"revive-0-1":{"html":"","width":"","height":"","data_view":"true","data_order":"","data_mod":"","data_aid":52,"data_ideaid":""}}'))
