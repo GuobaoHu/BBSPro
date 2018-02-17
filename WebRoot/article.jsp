@@ -10,8 +10,9 @@ private void tree(Connection conn, int id, int level) {
 	Statement stmt = null;
 	ResultSet rs = null;
 	try {
-		stmt = conn.createStatement();
-		rs = stmt.executeQuery("select * from article where pid = " + id);
+		String sql = "select * from article where pid = " + id;
+		stmt = DB.getStmt(conn);
+		rs = DB.getRs(stmt, sql);
 		String preStr = "";
 		for(int i=0; i<level; i++) {
 			preStr = preStr + "---- ";
@@ -40,20 +41,14 @@ private void tree(Connection conn, int id, int level) {
 	} catch (SQLException e) {
 		e.printStackTrace();
 	} finally {
-		try {
-			if(rs != null) rs.close();
-			if(stmt != null) stmt.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		DB.close(rs);
+		DB.close(stmt);
 	}
 }
 %>
 
 <%
-Class.forName("com.mysql.jdbc.Driver").newInstance();
-Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/bbs?" +
-                            "user=root&password=root");
+Connection conn = DB.getConn();
 tree(conn, 0, 0);
 %>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -295,6 +290,6 @@ tree(conn, 0, 0);
 </body>
 <% 
 output = "";
-if(conn != null) conn.close();
+DB.close(conn);
 %>
 </html>
