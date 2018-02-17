@@ -1,19 +1,77 @@
+<%@ page language="java" import="java.util.*,java.sql.*,guyue.BBS.DB" pageEncoding="UTF-8"%>
+
+<%!
+String output = "";
+//行标记
+boolean rowFlg = false;
+
+/* 递归方法 */
+private void tree(Connection conn, int id, int level) {
+	Statement stmt = null;
+	ResultSet rs = null;
+	try {
+		stmt = conn.createStatement();
+		rs = stmt.executeQuery("select * from article where pid = " + id);
+		String preStr = "";
+		for(int i=0; i<level; i++) {
+			preStr = preStr + "---- ";
+		}
+		while(rs.next()) {
+			String rowFlgStr = "";
+			if(rowFlg) {
+				rowFlgStr = "zebra";
+			}
+			output = output + "<tr class=" + rowFlgStr + ">" +
+			          "<td class='title'><strong class='green'>？</strong> <a href=''>" + preStr + rs.getString("title") + "</a></td>" +  
+			          "<td class='tc'>50</td>" + 
+			          "<td class='tc'><a href='http://my.csdn.net/qq_32461501' rel='nofollow' target='_blank' title='qq_32461501'>qq_32461501</a><br>" +
+			            "<span class='time'>2018-02-08 21:00</span></td>" +
+			          "<td class='tc'>3</td>" +
+			          "<td class='tc'><a href='http://my.csdn.net/qq_32461501' rel='nofollow' target='_blank' title='qq_32461501'>qq_32461501</a><br>" + 
+			            "<span class='time'>2018-02-15 15:52</span></td>" + 
+			          "<td class='tc'><a href='http://bbs.csdn.net/topics/392320895/close' target='_blank'>管理</a></td>" + 
+			        "</tr>";
+			rowFlg = ! rowFlg;
+			
+			if(rs.getInt("isleaf") == 1) {
+				tree(conn, rs.getInt("id"), level+1);
+			}
+		}
+	} catch (SQLException e) {
+		e.printStackTrace();
+	} finally {
+		try {
+			if(rs != null) rs.close();
+			if(stmt != null) stmt.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+}
+%>
+
+<%
+Class.forName("com.mysql.jdbc.Driver").newInstance();
+Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/bbs?" +
+                            "user=root&password=root");
+tree(conn, 0, 0);
+%>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html class="csdn-bbs">
 <head>
-<script charset="utf-8" src="article_files/b.js"></script><script src="article_files/hm.js"></script>
+<script charset="utf-8" src="imgs/b.js"></script><script src="imgs/hm.js"></script>
 <link rel="alternate" media="handheld" href="#">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Java论坛-CSDN论坛</title>
-<link href="article_files/index-364163dbe5c7173bb8ebcb91209d8821.css" media="screen" rel="stylesheet" type="text/css">
-<link href="article_files/btn.css" media="screen" rel="stylesheet" type="text/css">
-<script src="article_files/push.js"></script><script src="article_files/application-6ceac2bf2615e60a422b82074c68ef10.js" type="text/javascript"></script>
-<link href="article_files/main-38789a315043b4abb85969b3d47b6ab5.css" media="screen" rel="stylesheet" type="text/css">
+<link href="imgs/index-364163dbe5c7173bb8ebcb91209d8821.css" media="screen" rel="stylesheet" type="text/css">
+<link href="imgs/btn.css" media="screen" rel="stylesheet" type="text/css">
+<script src="imgs/push.js"></script><script src="imgs/application-6ceac2bf2615e60a422b82074c68ef10.js" type="text/javascript"></script>
+<link href="imgs/main-38789a315043b4abb85969b3d47b6ab5.css" media="screen" rel="stylesheet" type="text/css">
 <!--<script src="http://counter.csdn.net/a/js/AreaCounter.js" type="text/javascript" charset="utf-8"></script>-->
 
 <link href="http://c.csdnimg.cn/public/favicon.ico" rel="SHORTCUT ICON">
-<link rel="stylesheet" href="article_files/content_toolbar.css">
-<script language="javascript" type="text/javascript" src="article_files/tracking-1_002.js"></script>
+<link rel="stylesheet" href="imgs/content_toolbar.css">
+<script language="javascript" type="text/javascript" src="imgs/tracking-1_002.js"></script>
 <script type="text/javascript">
     document.domain = "csdn.net";
     var proxy_url = "http://internalapi.csdn.net/proxy.html";
@@ -38,7 +96,7 @@
 </script>
 <link href="http://bbs.csdn.net/forums/Java.atom" rel="alternate" title="ATOM" type="application/atom+xml">
 <link ref="canonical" href="http://bbs.csdn.net/forums/Java">
-<script type="text/javascript" charset="utf-8" src="article_files/tracking-1.js"></script><script type="text/javascript" charset="utf-8" src="article_files/main-1.js"></script><script src="article_files/get_ads.php" type="text/javascript"></script>
+<script type="text/javascript" charset="utf-8" src="imgs/tracking-1.js"></script><script type="text/javascript" charset="utf-8" src="imgs/main-1.js"></script><script src="imgs/get_ads.php" type="text/javascript"></script>
 </head>
 <body style="margin-left: 100px;margin-right: 100px">
 <svg aria-hidden="true" style="position: absolute; width: 0px; height: 0px; overflow: hidden;">
@@ -106,9 +164,9 @@
 <ins data-revive-zoneid="149" data-revive-id="8c38e720de1c90a6f6ff52f3f89c4d57" id="revive-0-0"></ins> 
 <!--全屏--> 
 
-<script src="article_files/left_menu-15a978e14716cc2800b8777f2087e418.js" type="text/javascript"></script> 
-<script type="text/javascript" src="article_files/cnick.js"></script> 
-<script src="article_files/left_menu.js" type="text/javascript" charset="utf-8"></script>
+<script src="imgs/left_menu-15a978e14716cc2800b8777f2087e418.js" type="text/javascript"></script> 
+<script type="text/javascript" src="imgs/cnick.js"></script> 
+<script src="imgs/left_menu.js" type="text/javascript" charset="utf-8"></script>
 <style>
 
   .news-nav .container {
@@ -223,35 +281,20 @@
       <tbody>
         <tr class="zebra">
           <th>标题</th>
-          <th class="tc">分数</th>
-          <th class="tc">提问人</th>
-          <th class="tc">回复数</th>
-          <th class="tc">最后更新时间</th>
-          <th class="tc">功能</th>
+          <th class='tc'>分数</th>
+          <th class='tc'>提问人</th>
+          <th class='tc'>回复数</th>
+          <th class='tc'>最后更新时间</th>
+          <th class='tc'>功能</th>
         </tr>
-        <tr class="zebra">
-          <td class="title"><strong class="green">？</strong> <a href="http://bbs.csdn.net/topics/392320895" target="_blank" title="javaweb向red5推流无法播放">javaweb向red5推流无法播放</a> <span class="forum_link">[<span class="parent"><a href="http://bbs.csdn.net/forums/Java">Java</a></span> <a href="http://bbs.csdn.net/forums/Java_WebDevelop">Web 开发</a>]</span></td>
-          <td class="tc">50</td>
-          <td class="tc"><a href="http://my.csdn.net/qq_32461501" rel="nofollow" target="_blank" title="qq_32461501">qq_32461501</a><br>
-            <span class="time">2018-02-08 21:00</span></td>
-          <td class="tc">3</td>
-          <td class="tc"><a href="http://my.csdn.net/qq_32461501" rel="nofollow" target="_blank" title="qq_32461501">qq_32461501</a><br>
-            <span class="time">2018-02-15 15:52</span></td>
-          <td class="tc"><a href="http://bbs.csdn.net/topics/392320895/close" target="_blank">管理</a></td>
-        </tr>
-        <tr>
-          <td class="title"><strong class="green">？</strong> <a href="http://bbs.csdn.net/topics/392322442" target="_blank" title="使用struts+hibernate，在显示数据jsp删除数据后再返回原页面，重新显示删除后的数据失败">使用struts+hibernate，在显示数据jsp删除数据后再返回原页面，重新显示删除后的数据失败</a> <span class="forum_link">[<span class="parent"><a href="http://bbs.csdn.net/forums/Java">Java</a></span> <a href="http://bbs.csdn.net/forums/J2EE">Java EE</a>]</span></td>
-          <td class="tc">50</td>
-          <td class="tc"><a href="http://my.csdn.net/herlioner" rel="nofollow" target="_blank" title="herlioner">herlioner</a><br>
-            <span class="time">2018-02-13 21:22</span></td>
-          <td class="tc">3</td>
-          <td class="tc"><a href="http://my.csdn.net/weixin_40445305" rel="nofollow" target="_blank" title="weixin_40445305">weixin_40445305</a><br>
-            <span class="time">2018-02-15 15:45</span></td>
-          <td class="tc"><a href="http://bbs.csdn.net/topics/392322442/close" target="_blank">管理</a></td>
-        </tr>
+        <%= output %>
       </tbody>
     </table>
   </div>
 </div>
 </body>
+<% 
+output = "";
+if(conn != null) conn.close();
+%>
 </html>
