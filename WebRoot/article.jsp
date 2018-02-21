@@ -1,41 +1,27 @@
-<%@ page language="java" import="java.util.*,java.sql.*,guyue.BBS.DB" pageEncoding="UTF-8"%>
+<%@ page language="java" import="java.util.*,java.sql.*,guyue.BBS.*,java.text.SimpleDateFormat" pageEncoding="UTF-8"%>
 
 <%!
-String output = "";
 //行标记
-boolean rowFlg = false;
+boolean rowFlg = true;
 
 /* 递归方法 */
-private void tree(Connection conn, int id, int level) {
+private void tree(List<Article> articles, Connection conn, int id, int level) {
 	Statement stmt = null;
 	ResultSet rs = null;
 	try {
 		String sql = "select * from article where pid = " + id;
 		stmt = DB.getStmt(conn);
 		rs = DB.getRs(stmt, sql);
-		String preStr = "";
-		for(int i=0; i<level; i++) {
-			preStr = preStr + "---- ";
-		}
 		while(rs.next()) {
-			String rowFlgStr = "";
-			if(rowFlg) {
-				rowFlgStr = "zebra";
-			}
-			output = output + "<tr class=" + rowFlgStr + ">" +
-			          "<td class='title'><strong class='green'>？</strong> <a href=''>" + preStr + rs.getString("title") + "</a></td>" +  
-			          "<td class='tc'>50</td>" + 
-			          "<td class='tc'><a href='http://my.csdn.net/qq_32461501' rel='nofollow' target='_blank' title='qq_32461501'>qq_32461501</a><br>" +
-			            "<span class='time'>2018-02-08 21:00</span></td>" +
-			          "<td class='tc'>3</td>" +
-			          "<td class='tc'><a href='http://my.csdn.net/qq_32461501' rel='nofollow' target='_blank' title='qq_32461501'>qq_32461501</a><br>" + 
-			            "<span class='time'>2018-02-15 15:52</span></td>" + 
-			          "<td class='tc'><a href='http://bbs.csdn.net/topics/392320895/close' target='_blank'>管理</a></td>" + 
-			        "</tr>";
-			rowFlg = ! rowFlg;
+			Article a = new Article();
+			a.initArt(rs);
+			a.setLevel(level);
+			a.setSingular(rowFlg);
+			articles.add(a);
 			
-			if(rs.getInt("isleaf") == 1) {
-				tree(conn, rs.getInt("id"), level+1);
+			rowFlg = ! rowFlg;			
+			if(! a.isIsleaf()) {
+				tree(articles, conn, a.getId(), level+1);
 			}
 		}
 	} catch (SQLException e) {
@@ -49,7 +35,9 @@ private void tree(Connection conn, int id, int level) {
 
 <%
 Connection conn = DB.getConn();
-tree(conn, 0, 0);
+List<Article> articles = new ArrayList<Article>();
+tree(articles, conn, 0, 0);
+DB.close(conn);
 %>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html class="csdn-bbs">
@@ -282,14 +270,31 @@ tree(conn, 0, 0);
           <th class='tc'>最后更新时间</th>
           <th class='tc'>功能</th>
         </tr>
-        <%= output %>
+        <%
+        for(int i=1; i<articles.size(); i++) {
+        	Article a = articles.get(i-1);
+        	String preStr = "";
+        	for(int j=0; j<a.getLevel(); j++) {
+        		preStr = preStr + "---- ";
+        	}
+        %>
+        <tr class="<%= a.isSingular() ? "zebra" : ""%>">
+          <td class="title"><strong class="green">？</strong> <a href="articleDetail.jsp?id=<%= a.getId() %>" target="_blank" title="<%= a.getTitle()%>"><%= preStr + a.getTitle() %></a> <span class="forum_link">[<span class="parent"><a href="http://bbs.csdn.net/forums/Java">Java</a></span> <a href="http://bbs.csdn.net/forums/Java_WebDevelop">Web 开发</a>]</span></td>
+          <td class="tc">50</td>
+          <td class="tc"><a href="http://my.csdn.net/qq_32461501" rel="nofollow" target="_blank" title="qq_32461501">qq_32461501</a><br>
+            <span class="time"><%= new SimpleDateFormat("yyyy.MM.dd HH:mm").format(a.getPdate()) %></span></td>
+          <td class="tc">3</td>
+          <td class="tc"><a href="http://my.csdn.net/qq_32461501" rel="nofollow" target="_blank" title="qq_32461501">qq_32461501</a><br>
+            <span class="time">2018-02-15 15:52</span></td>
+          <td class="tc"><a href="http://bbs.csdn.net/topics/392320895/close" target="_blank">管理</a></td>
+        </tr>
+        <%
+        }
+        %>
+        
       </tbody>
     </table>
   </div>
 </div>
 </body>
-<% 
-output = "";
-DB.close(conn);
-%>
 </html>

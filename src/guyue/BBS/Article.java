@@ -1,5 +1,7 @@
 package guyue.BBS;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Date;
 
 public class Article {
@@ -10,8 +12,17 @@ public class Article {
 	private String cont;
 	private Date pdate;
 	private boolean isleaf;
+	private boolean singular;
 	private int level;
 	
+	public void initArt(ResultSet rs) throws SQLException {
+		this.setId(rs.getInt("id"));
+		this.setPid(rs.getInt("pid"));
+		this.setRootId(rs.getInt("rootid"));
+		this.setTitle(rs.getString("title"));
+		this.setPdate(rs.getTimestamp("pdate"));
+		this.setIsleaf(rs.getInt("isleaf")==0 ? true : false);
+	}
 	public int getId() {
 		return id;
 	}
@@ -53,6 +64,13 @@ public class Article {
 	}
 	public void setIsleaf(boolean isleaf) {
 		this.isleaf = isleaf;
+	}
+	
+	public boolean isSingular() {
+		return singular;
+	}
+	public void setSingular(boolean singular) {
+		this.singular = singular;
 	}
 	public int getLevel() {
 		return level;

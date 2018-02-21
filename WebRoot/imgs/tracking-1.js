@@ -1,5 +1,4 @@
-// last motify 2017-12-19 14:46:10
-
+// last modify 2017-12-19 14:16:06
 /**
  *  @author  yanglw@csdn.net
  *  @version 1.0.3
@@ -87,281 +86,344 @@
     }
 })();
 
+
 /*
- @file 前端用户行为跟踪
- @author <caoyu#at#csdn.net>
- @version 20160323
- */
+ @function adv tracking
+ @editer fjj
+ @create_time 20151201
+ **/
+(function(widnow,$csdn_iteye_jq,undefined){
+    function TrackAdv(){
+        this.advs=[];  // 被载入广告位集合
+        this.advFlag={};  //  用于载入广告位去重
+        this.dataArr=[]; //缓存需要提交数据的广告对象
+        this.dataTimer=null;
+        this.swapImgSet=false;  //第一个轮播图广告位载入时 触发轮播图方法  之后不再不再触发
+        this.init();
+    }
+    TrackAdv.prototype={
+        constructor:"Track",
+        init:function(){
+            var self=this;
+            //滚动处理函数  采用了事件节流 每隔100毫米计算一次
+            var scrollHandle=(function(){
+                var timer=null;
+                return function(){
+                    if(timer){
+                        return false;
+                    }
+                    timer=setTimeout(function(){
+                        timer=null;
+                        /*if(self.advs.length === 0){
+                         return false;
+                         }
+                         for(var i=0;i<self.advs.length;i++){
 
-(function() {
-    var slice = [].slice;
+                         if(self.advs[i].view && self.posTest(self.advs[i])){
+                         if(self.advs[i].ele.data("swapimg") && !self.advs[i].ele.hasClass("curSwap")){
+                         continue;
+                         }
+                         self.advs[i].viewed=true;
+                         //self.sendData(self.advs[i]);
+                         if(!self.dataTimer){
+                         self.discreteSend();
+                         }
+                         self.dataArr.push(self.advs[i]);
 
-    (function(definition, undef) {
-        var $, exports, global, i, t;
-        global = this;
-        $ = global.jQuery;
-        exports = {};
-        definition(global, exports, $);
-        if (global.csdn === undef) {
-            global.csdn = exports;
-        }
-        for (i in exports) {
-            global[i] = global.csdn[i] = exports[i];
+                         }
 
-        }
-        t = exports.tracking;
-        t({
-            '': [t.baseParams, t.tos, t.sessionId],
-            'bbs.csdn.net': t.tags('/topics/', 'div.tag span'),
-            'blog.csdn.net': t.tags('/article/details/', 'div.tag2box a'),
-            'ask.csdn.net': t.tags('/questions/', 'div.tag_data a.tag span'),
-            'download.csdn.net': t.tags('/detail/', 'div.info a[href^="/tag/"]'),
-            'www.csdn.net': [t.tags('/article/', 'div.tag a'), t.cmsPid],
-            'www.csto.com': t.tags('/p/', 'span.tech a'),
-            'www.iteye.com': t.tags('/topic/', '#topic_tags a')
-        });
-    })(function(global, exports, $) {
-        var iarr = [], _key=0;
-        var crossdomainGet, doc, domReady, flush, fns, hack, loaded, loc, protocol, querySelectorAll, testEl, topDomain, tracking;
-        doc = global.document;
-        loc = global.location;
-        protocol = loc.protocol.substr(0, 4) === 'http' ? '' : 'http:';
-        fns = [];
-        testEl = doc.documentElement;
-        hack = testEl.doScroll;
-        loaded = (hack ? /^loaded|^c/ : /^loaded|c/).test(doc['readyState']);
-        flush = function() {
-            var f;
-            loaded = 1;
-            while (f = fns.shift()) {
-                f();
-            }
-        };
-        if (typeof doc.addEventListener === "function") {
-            doc.addEventListener('DOMContentLoaded', function() {
-                doc.removeEventListener('DOMContentLoaded', arguments.callee, false);
-                flush();
-            });
-        }
-        if (hack) {
-            doc.attachEvent('onreadystatechange', function() {
-                if (/^c/.test(doc.readyState)) {
-                    doc.detachEvent('onreadystatechange', arguments.callee);
-                    flush();
+                         }*/
+                        self.insertData();
+                    },100)
                 }
-            });
-        }
-        domReady = hack ? function(fn) {
-            if (global.self !== global.top) {
-                if (loaded) {
-                    return fn();
-                } else {
-                    return fns.push(fn);
+            })();
+            //关闭浏览器 关闭当前页 跳转到其他页面时 将没有提交的数据一次行提交
+            var unloadHandle=function(){
+                if(self.dataArr.length ===0){
+                    return false;
                 }
-            } else {
-                try {
-                    testEl.doScroll('left');
-                } catch (_error) {
-                    global.setTimeout(function() {
-                        domReady(fn);
-                    }, 50);
-                    return;
+                for(var i=0,len=self.dataArr.length;i<len;i++){
+                    self.sendData(self.dataArr[i]);
                 }
-                fn();
+                self.dataArr=[];
             }
-        } : function(fn) {
-            if (loaded) {
-                fn();
-            } else {
-                fns.push(fn);
+            //$csdn_iteye_jq(window).on("scroll",scrollHandle);
+            //$csdn_iteye_jq(window).on("unload",unloadHandle);
+        },
+        //载入广告对象
+        addAdvs:function(eleStr,opt){
+            var self=this,
+                eleStr=eleStr || ".J_adv",
+                opt=typeof opt === "object"?opt:{},
+                oAdvs=$csdn_iteye_jq(eleStr),
+                nAdvLen=oAdvs.length,
+                preAdr=document.referrer || "-";   // 前一个文档地址
+            if(nAdvLen === 0){
+                return false;
             }
-        };
-        topDomain = function(d) {
-            return /\.?([a-z0-9\-]+\.[a-z0-9\-]+)(:\d+)?$/.exec(d)[1];
-        };
+            for(var i=0;i<nAdvLen;i++){
+                var adv={};
+                var mod=$csdn_iteye_jq(oAdvs[i]).data("mod");
+                if(this.advFlag[mod]){
+                    return false;
+                }
+                adv.ele=$csdn_iteye_jq(oAdvs[i]);
+                adv.top=$csdn_iteye_jq(oAdvs[i]).offset().top;
+                adv.height=$csdn_iteye_jq(oAdvs[i]).height()?$csdn_iteye_jq(oAdvs[i]).height():$csdn_iteye_jq(oAdvs[i]).find("img").height();
+                adv.view=typeof $csdn_iteye_jq(oAdvs[i]).data("view") === "undefined" ?true:$csdn_iteye_jq(oAdvs[i]).data("view");  //  对应广告位是否需要曝光
+                adv.viewed=false;   //被曝光时为true
+                adv.data={
+                    uid:"-",
+                    ref:preAdr,
+                    mod:adv.ele.data("mod") || "-",
+                    mtp:opt.mtp || adv.ele.data("mtp") || 1,
+                    con:self.exportData(adv),
+                    ck:"-"
+                };
+                if(adv.ele.data("swapimg") && !this.swapImgSet){
+                    //只触发一次轮播图方法
+                    //adv.ele.addClass("curSwap").parent().css("z-index",100);
+                    csdn.SwapImage.swap({
+                        swapRoot: $csdn_iteye_jq( '.hot' )
+                    });
+                    this.swapImgSet=true;
+                }
+                if(this.posTest(adv) && adv.view){
+                    if($csdn_iteye_jq(oAdvs[i]).data("swapimg")){  //是轮播图广告位的情况
+                        if($csdn_iteye_jq(oAdvs[i]).hasClass("curSwap")){
+                            adv.viewed=true;
+                            this.sendData(adv);
+                            /*this.dataArr.push(adv);
+                             if(!this.dataTimer){
+                             this.discreteSend();
+                             }*/
 
-        /*
-         对外公开的跟踪函数tracking
-         @param {Object} opts 定义了不同域名下要收集的信息
-         */
-        exports.tracking = tracking = function(opts) {
-            domReady(function() {
-                var data, i, j, k, len, len1, opt, ref;
-                data = {};
-                ref = [opts[loc.host], opts['']];
-                for (j = 0, len = ref.length; j < len; j++) {
-                    opt = ref[j];
-                    if (opt) {
-                        if (typeof opt === 'function') {
-                            opt(data);
-                        } else {
-                            for (k = 0, len1 = opt.length; k < len1; k++) {
-                                i = opt[k];
-                                if (typeof i === "function") {
-                                    i(data);
-                                }
-                            }
                         }
+                    }else{ //如果不是轮播图的只要进入屏幕区域就算曝光
+                        adv.viewed=true;
+
+                        /*//如果定时提交数据的定时器没有开启的话，开启定时器
+                         this.dataArr.push(adv);
+                         if(!this.dataTimer){
+                         this.discreteSend();
+                         }*/
+
+                        this.sendData(adv);
+                    }
+
+                }
+                this.advs.push(adv);
+                this.linkNodes(adv);
+                //this.expAdvs.push(adv);
+                this.advFlag[mod]=true;
+            }
+        },
+
+        //判断广告位是否进入屏幕 进入即将广告对象缓存到(dataArr)中
+        insertData:function(){
+            var self=this;
+            if(self.advs.length === 0){
+                return false;
+            }
+            for(var i=0;i<self.advs.length;i++){
+                if(self.advs[i].view && self.posTest(self.advs[i])){
+                    if(self.advs[i].ele.data("swapimg") && !self.advs[i].ele.hasClass("curSwap")){
+                        continue;
+                    }
+                    self.advs[i].viewed=true;
+                    self.sendData(self.advs[i]);
+                    /*//将广告对象添加到数据队列(dataArr)即可并等待提交
+                     self.dataArr.push(self.advs[i]);
+
+                     //如果定时提交数据的定时器没有开启的话，开启定时器
+                     if(!self.dataTimer){
+                     self.discreteSend();
+                     }*/
+
+                }
+
+            }
+        },
+        //每隔1秒提交一次曝光数据(1条)
+        discreteSend:function(){
+            var self=this;
+            var discreteHandle=function(){
+                if(self.dataArr.length ===0){
+                    clearInterval(self.dataTimer);
+                    self.dataTimer=null;
+                    return false;
+                }
+                var i=0;
+                while(i<1){
+                    if(self.dataArr[0]){
+                        self.sendData(self.dataArr[0]);
+                        self.dataArr.shift();
+                        i++;
+                    }else{
+                        clearInterval(self.dataTimer);
+                        self.dataTimer=null;
+                        break;
                     }
                 }
-                crossdomainGet(data);
-            });
-        };
-
-        /*
-         附加基本的参数到数据上，包括referrer user_name oid pid x-acl-token
-         */
-        tracking.baseParams = function(data) {
-            var ref, ref1, ref2, ref3, ref4;
-            data.user_name = /iteye.com$/.test(loc.host) ? ((ref = />欢迎([^<]+)<\/a>/.exec((ref1 = doc.getElementById('user_nav')) != null ? ref1.innerHTML : void 0)) != null ? ref[1] : void 0) || '' : ((ref2 = /(; )?(UserName)=([^;]+)/.exec(doc.cookie)) != null ? ref2[3] : void 0) || '';
-            data['x-acl-token'] = 'status_js_dkuyqthzbajmncbsb_token';
-            if (!data.pid) {
-                data.pid = /iteye.com$/.test(loc.host) ? 'iteye' : doc.body.getAttribute('data-pid') || ((ref3 = /(\w+)\.\w+\.\w+$/.exec(loc.host)) != null ? ref3[1] : void 0);
             }
-            data.oid = ((ref4 = querySelectorAll('.h-entry .p-author')[0]) != null ? ref4.innerHTML.replace(/^\s+|\s+$/g, '') : void 0) || '';
-            //修改会议商品列表页嵌套的iframe的referrer开始
-            function GetCurrenUrlString(){
-                var name,value;
-                var str= document.referrer; //取得整个地址栏
-                var num=str.indexOf("?")
-                str=str.substr(num+1); //取得所有参数   stringvar.substr(start [, length ]
-
-                var arr=str.split("&"); //各个参数放到数组里
-                for(var i=0;i < arr.length;i++){
-                    num=arr[i].indexOf("=");
-                    if(num>0){
-                        name=arr[i].substring(0,num);
-                        value=arr[i].substr(num+1);
-                        this[name]=value;
-                    }
-                }
-            }
-            var Request = new GetCurrenUrlString();
-            var huiyiProductId=Request.project_id;
-            var curReferrer = global.document.referrer;
-            //pareantsUrl;
-            //var childiframeurl = document.goodsListIframe.pareantsUrl;
-            //console.log(childiframeurl);
-            //ref = global.document.referrer || '-';
-            if(curReferrer.substr(0, 54)==='http://huiyi.csdn.net/api/activity_api/get_goods_list?'){
-                var huiyiUrl = 'http://huiyi.csdn.net/activity/product/goods_list?'
-                return data.referrer = huiyiUrl+'project_id='+huiyiProductId;
+            this.dataTimer=setInterval(discreteHandle,20);
+        },
+        // 获取曝光内容即广告位中所有连接的内容
+        exportData:function(adv){
+            var con=adv.ele.data("con") || "-";
+            return !!adv.ele.data("order")?con+",ad_order_"+adv.ele.data("order"):con+"-"
+        },
+        // 测试广告位是否在曝光区域
+        posTest:function(adv){
+            //修改曝光规则
+            if(adv.viewed){
+                return false;
             }else{
-                return data.referrer = doc.referrer;
+                return true;
             }
-            //修改会议商品列表页嵌套的iframe的referrer结束
-
-        };
-        tracking.sessionId = function(data) {
-            var ref, sid;
-            sid = (ref = /\bdc_session_id=([^;]*)(?:$|;)/.exec(doc.cookie)) != null ? ref[1] : void 0;
-            /*if (!/^https?:\/\/([\w-]+\.)*csdn\.net\//.test(doc.referrer)) {
-             sid = void 0;
-             }*/
-            if (sid === void 0) {
-                sid = new Date().getTime()+"_"+Math.random();
+        },
+        // 获取广告位中所有的连接且添加click事件
+        linkNodes:function(adv){
+            var self=this;
+            var aLinks=adv.ele.find("a");
+            var iframeLinks=adv.ele.find("iframe")
+            if(aLinks.length === 0 && iframeLinks.length === 0 ){
+                return false;
             }
-            doc.cookie = "dc_session_id=" + sid + " ; path=/ ; domain=." + (topDomain(loc.host));
-            return data.session_id = "" + sid;
-        };
-
-        /*
-         附加上一页面及停留时间到数据上
-         */
-        tracking.tos = function(data) {
-            var e, now, ref, t, tos;
-            now = +new Date() / 1000 | 0;
-            t = (ref = /\bdc_tos=([^;]*)(?:$|;)/.exec(doc.cookie)) != null ? ref[1] : void 0;
-            try {
-                tos = now - parseInt(t, 36);
-            } catch (_error) {
-                e = _error;
-                tos = -1;
-            }
-            doc.cookie = "dc_tos=" + (now.toString(36)) + " ; expires=" + (new Date((now + 4 * 60 * 60) * 1000).toGMTString()) + " ; max-age=" + (4 * 60 * 60) + " ; path=/ ; domain=." + (topDomain(loc.host));
-            return data.tos = tos;
-        };
-
-        /*
-         返回附加tag参数到数据上的函数，只在指定的path中生效，具体的tags由selectors指定
-         @param {String/RegExp} path 要匹配的地址路径片段
-         @param {Array[String/Function]} selectors tag的选择器或者是返回tag数组的函数列表
-         */
-        tracking.tags = function() {
-            var path, selectors;
-            path = arguments[0], selectors = 2 <= arguments.length ? slice.call(arguments, 1) : [];
-            return function(data) {
-                var e, eles, i, j, k, l, len, len1, len2, ref, result, sel, t;
-                if (typeof path === 'string' && !~loc.pathname.indexOf(path) || path instanceof RegExp && !path.test(loc.pathname)) {
-                    return;
+            aLinks.each(function(){
+                if($csdn_iteye_jq(this).attr("target") == undefined){
+                    $csdn_iteye_jq(this).attr("target","_blank");
                 }
-                eles = [];
-                for (j = 0, len = selectors.length; j < len; j++) {
-                    sel = selectors[j];
-                    ref = (typeof sel === 'string' ? querySelectorAll(sel) : (typeof sel === "function" ? sel() : void 0) || []);
-                    for (k = 0, len1 = ref.length; k < len1; k++) {
-                        i = ref[k];
-                        eles.push(i);
-                    }
-                }
-                result = {};
-                for (l = 0, len2 = eles.length; l < len2; l++) {
-                    e = eles[l];
-                    result[e.innerHTML.replace(/^\s+|\s+$/g, '')] = 1;
-                }
-                data.tag = ((function() {
-                    var results;
-                    results = [];
-                    for (t in result) {
-                        results.push(t);
-                    }
-                    return results;
-                })()).join();
-            };
-        };
+                $csdn_iteye_jq(this).on("click",function(){
+                    con=self.linkData(this);
+                    self.sendData(adv,con);
+                })
+            })
+        },
+        //获取点击元素的内容
+        linkData:function(that){
+            var ck=""+that.href;
+            var conStr;
+            if($csdn_iteye_jq(that).find("img").length){
+                conStr=$csdn_iteye_jq(that).find("img").eq(0).attr("title") || $csdn_iteye_jq(that).find("img").eq(0).attr("alt")
 
-        /*
-         附加pid参数到数据上的函数，针对 www.csdn.net/article/ 下的文章页探测真实pid
-         */
-        tracking.cmsPid = function(data) {
-            if (loc.pathname.indexOf('/article/') === -1) {
-                return;
+            }else{
+                conStr=$csdn_iteye_jq(that).html();
             }
-            try {
-                return data.pid = querySelectorAll('.brea_nav > a')[1].hostname.match(/(\w+)\.\w+\.\w+$/)[1];
-            } catch (_error) {
+            ck+=conStr?";"+conStr:"";
+            return ck;
+        },
+        //获取用户ID
+        getUserId:function(){
+            var result=/(; )?(UserName|_javaeye_cookie_id_)=([^;]+)/.exec(widnow.document.cookie);
+            var uid= (result != null ? result[3] : void 0) || '-';
+            return uid;
+        },
+        //提交数据
+    sendData:function(adv,con){
+        adv.data.uid=this.getUserId();
+        if(typeof con === "string"){
+            adv.data.ck=con;
+        }
+        csdn.trackReport("re",$.param(adv.data));
+    },
+    //数据转换为字符串形式
+    paramData:function(data){
+        var dataArr=[];
+        for(var key in data){
+            var text=key+"="+data[key];
+            text.replace(/^\s+|\s+$/g,"");
+            dataArr.push(text);
+        }
+        return dataArr.join("&")
+    }
+    //处理url
+    /*handleUrl:function(url){
+     if(typeof url === "string" && url.length >0 ){
+     var hostStr=url.split("://")[1];
+     hostName=hostStr.split(".")[0];
+     strArr=hostStr.split("?")[0].split("/");
+     fileName=strArr[strArr.length-1];
+     return hostName+"_"+fileName;
+     }else{
+     return false;
+     }
+     }*/
+}
+    //轮播图   淡入淡出
+    /*	function SwapImg(opts,obj){
+     if(!(this instanceof SwapImg)){
+     return new SwapImg(opts,obj);
 
-            }
-        };
-        /*
-         附加wechat参数到数据上的函数，针对微信浏览器用户增加参数
-         */
-        /*tracking.wechat=function(data){
-         var ua = window.navigator.userAgent.toLowerCase();
-         if(ua.match(/MicroMessenger/i) == 'micromessenger'){
-         data.source='wechat';
-         }else{
-         return false;
-         }
-         }*/
+     }
+     this.obj=obj;
+     this.parentSelector=opts.parentSelector || ".hot";
+     this.swapSelector=opts.swapSelector || ".hot .J_adv";
+     this.swapCur="curSwap";
+     this.iconSelector=opts.iconSelector || ".js-tagRoot";
+     this.iconCur="current";
+     this.duration=opts.duration || 500;
+     this.interval=opts.interval || 3000;
+     this.lastIndex=-1;
+     this.index=0;
+     this.swapFlag=false; //是否正在轮播中
+     this.timer=null;
+     this.init();
+     }
+     SwapImg.prototype={
+     constructor:SwapImg,
+     init:function(){
+     var self=this,
+     swapNode=$csdn_iteye_jq(this.swapSelector),
+     swapLen=swapNode.length,
+     iconNode=$csdn_iteye_jq(this.iconSelector),
+     iconStr="";
+     for(var i=0;i<swapLen;i++){
+     iconStr+=i==0?"<li class='current'></li>":"<li></li>";
+     }
+     iconNode.html(iconStr);
+     iconNode.find("li").each(function(i){
+     $csdn_iteye_jq(this).on("click",function(){
+     //clearInterval(self.timer);
+     if($csdn_iteye_jq(this).hasClass("current") || self.swapFlag ){
+     return false;
+     }
+     self.swapHandle(i);
+     })
+     });
+     self.timer=setInterval(function(){
+     self.swapHandle();
+     },self.interval)
 
-        /*
-         使用CSS选择器检索对应的DOM元素
-         @param {String} selector - CSS选择器
-         @returns {Array[HTMLElement]} HTML元素集合，如果浏览器不支持使用CSS选择器查找将返回 undefined，如果找不到任何元素返回0长度的近似数组
-         */
-        tracking.querySelectorAll = querySelectorAll = function(selector) {
-            return (typeof doc.querySelectorAll === "function" ? doc.querySelectorAll(selector) : void 0) || (typeof $ === "function" ? $(selector) : void 0) || global.Prototype && (typeof global.$$ === "function" ? global.$$(selector) : void 0) || [];
-        };
-
-        /*
-         发送跨域HTTP GET请求
-         @param {String} url - 请求的Url，忽略将使用默认的行为跟踪地址
-         @param {Object} data - 请求要提交的数据
-         */
-        return tracking.crossdomainGet = crossdomainGet = function(data) {
-            csdn.trackReport("track",$.param(data));
-        };
-    });
-
-}).call(this);
+     $csdn_iteye_jq(self.parentSelector).hover(function(){
+     clearInterval(self.timer)
+     },function(){
+     self.timer=setInterval(function(){
+     self.swapHandle();
+     },self.interval)
+     });
+     },
+     swapHandle:function(i){
+     var self=this;
+     self.swapFlag=true;
+     self.lastIndex=self.index;
+     self.index=typeof i === 'number'?i:++self.index%$(self.swapSelector).length;  //i || ....
+     //self.index=i || ++self.index%$(self.swapSelector).length;
+     $csdn_iteye_jq(self.iconSelector).find("li").removeClass("current").eq(self.index).addClass("current");
+     $csdn_iteye_jq(self.swapSelector).removeClass("curSwap").eq(self.index).addClass("curSwap");
+     $csdn_iteye_jq(self.swapSelector).eq(self.index).animate({opacity:1},self.duration,function(){
+     //$csdn_iteye_jq(this).parent().css("z-index",100)
+     $csdn_iteye_jq(this).parent().css({"position":"absolute","z-index":"100","height":"200","top":"0","left":"0"})
+     });
+     $csdn_iteye_jq(self.swapSelector).eq(self.lastIndex).animate({opacity:0},self.duration,function(){
+     $csdn_iteye_jq(this).parent().css("z-index",0)
+     if(self.obj && typeof self.obj.insertData === "function"){
+     self.obj.insertData();
+     }
+     self.swapFlag=false;
+     })
+     }
+     }*/
+    widnow.CSDN=widnow.CSDN?widnow.CSDN:{};
+    return window.CSDN.track=new TrackAdv();
+})(window,jQuery)
