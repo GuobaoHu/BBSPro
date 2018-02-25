@@ -2,6 +2,7 @@ package guyue.BBS;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -35,6 +36,16 @@ public class DB {
 		return stmt;
 	}
 	
+	public static PreparedStatement getPreStmt(Connection conn, String sql) {
+		PreparedStatement preStmt = null;
+		try {
+			preStmt = conn.prepareStatement(sql);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return preStmt;
+	}
+	
 	public static ResultSet getRs(Statement stmt, String sql) {
 		ResultSet rs = null;
 		try {
@@ -56,6 +67,14 @@ public class DB {
 	public static void close(Statement stmt) {
 		try {
 			if(stmt != null) stmt.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void close(PreparedStatement preStmt) {
+		try {
+			if(preStmt != null) preStmt.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
