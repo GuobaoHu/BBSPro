@@ -39,7 +39,7 @@ public class DB {
 	public static PreparedStatement getPreStmt(Connection conn, String sql) {
 		PreparedStatement preStmt = null;
 		try {
-			preStmt = conn.prepareStatement(sql);
+			preStmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}

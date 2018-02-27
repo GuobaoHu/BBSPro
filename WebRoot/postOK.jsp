@@ -3,28 +3,11 @@
 request.setCharacterEncoding("utf-8");
 String path = request.getContextPath();
 String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.getServerPort()+path+"/";
-%>
 
-<%
-String strId = request.getParameter("id");
-String strRootid = request.getParameter("rootid");
-String strIsleaf = request.getParameter("isleaf");
 String title = request.getParameter("title");
 String cont = request.getParameter("cont");
-//检查id,rootid,isleaf
-if(EX.checkStr(strId) || EX.checkStr(strRootid) || EX.checkStr(strIsleaf)) {
-	out.println("id或rootid或isleaf数字为空!");
-	return;
-}	
-int id, rootid, isleaf;
-try {
-	id = Integer.parseInt(strId);
-	rootid = Integer.parseInt(strRootid);
-	isleaf = Integer.parseInt(strIsleaf);
-} catch (NumberFormatException e) {
-	out.println("数字格式有误!");
-	return;
-}
+System.out.println(title + "     " + cont);
+
 //检查表单数据title,cont
 if(EX.checkStr(title) || EX.checkStr(cont)) {
 	out.println("标题或者内容不能为空！");
@@ -36,21 +19,20 @@ Connection conn = DB.getConn();
 conn.setAutoCommit(false);
 
 //1.向数据库插入一条记录
-String sql = "insert into article values (null, ?, ?, ?, ?, now(), 0)";
+String sql = "insert into article values (null, 0, -1, ?, ?, now(), 0)";
 PreparedStatement preStmt = DB.getPreStmt(conn, sql);
-preStmt.setInt(1, id);
-preStmt.setInt(2, rootid);
-preStmt.setString(3, title);
-preStmt.setString(4, cont);
+preStmt.setString(1, title);
+preStmt.setString(2, cont);
 preStmt.executeUpdate();
 
-//2.修改id的isleaf
-Statement stmt = null;
-if(isleaf == 0) {
-	stmt = DB.getStmt(conn);
-	String upSql = "update article set isleaf = 1 where id = " + id;
-	stmt.executeUpdate(upSql);
-}
+//2.修改增加记录的rootid，与id一致
+ResultSet rs = preStmt.getGeneratedKeys();
+rs.next();
+int currentMaxId = rs.getInt(1);
+rs.close();
+String upSql = "update article set rootid = " + currentMaxId + " where id = " + currentMaxId;
+Statement stmt = DB.getStmt(conn);
+stmt.executeUpdate(upSql);
 
 //3.事务结束，恢复现场
 conn.commit();
@@ -103,7 +85,7 @@ DB.close(conn);
   </head>
   
   <body>
-    回复完成,<span id="time" background="yellow">6</span>秒之后进行跳转
+    新话题创建完成,<span id="time" background="yellow">3</span>秒之后进行跳转
     <br>
     如未跳转，点击<a href="article.jsp">这里</a>
     <script type="text/javascript">

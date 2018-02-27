@@ -252,6 +252,7 @@ DB.close(conn);
     </ul>
   </div>
   <div class="content">
+  	<a href="post.jsp">发表新主题</a>
     <table class="table_list parent_forum " cellspacing="0" cellpadding="0" width="100%" border="0">
       <colgroup>
       <col>
@@ -271,7 +272,7 @@ DB.close(conn);
           <th class='tc'>功能</th>
         </tr>
         <%
-        for(int i=1; i<articles.size(); i++) {
+        for(int i=1; i<=articles.size(); i++) {
         	Article a = articles.get(i-1);
         	String preStr = "";
         	for(int j=0; j<a.getLevel(); j++) {
