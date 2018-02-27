@@ -6,8 +6,8 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 
 String title = request.getParameter("title");
 String cont = request.getParameter("cont");
-System.out.println(title + "     " + cont);
-
+/* System.out.println(title + "     " + cont);
+ */
 //检查表单数据title,cont
 if(EX.checkStr(title) || EX.checkStr(cont)) {
 	out.println("标题或者内容不能为空！");
@@ -20,7 +20,7 @@ conn.setAutoCommit(false);
 
 //1.向数据库插入一条记录
 String sql = "insert into article values (null, 0, -1, ?, ?, now(), 0)";
-PreparedStatement preStmt = DB.getPreStmt(conn, sql);
+PreparedStatement preStmt = DB.getPreStmt(conn, sql, Statement.RETURN_GENERATED_KEYS);
 preStmt.setString(1, title);
 preStmt.setString(2, cont);
 preStmt.executeUpdate();
