@@ -20,6 +20,7 @@ public class Article {
 		this.setPid(rs.getInt("pid"));
 		this.setRootId(rs.getInt("rootid"));
 		this.setTitle(rs.getString("title"));
+		this.setCont(rs.getString("cont"));
 		this.setPdate(rs.getTimestamp("pdate"));
 		this.setIsleaf(rs.getInt("isleaf")==0 ? true : false);
 	}

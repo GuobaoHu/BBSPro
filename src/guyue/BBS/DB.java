@@ -36,6 +36,20 @@ public class DB {
 		return stmt;
 	}
 	
+	public static int executeUpdate(Connection conn, String sql) {
+		int exeCount = 0;
+		Statement stmt = null;
+		try {
+			stmt = conn.createStatement();
+			exeCount = stmt.executeUpdate(sql);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			close(stmt);
+		}
+		return exeCount;
+	}
+	
 	public static PreparedStatement getPreStmt(Connection conn, String sql) {
 		PreparedStatement preStmt = null;
 		try {
