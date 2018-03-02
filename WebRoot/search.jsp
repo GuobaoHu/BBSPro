@@ -3,7 +3,7 @@
 <%!
 //行标记
 boolean rowFlg = true;
-public static final int PERPAGE = 5;
+public static final int PERPAGE = 2;
 %>
 
 <%
@@ -15,22 +15,36 @@ if(state != null && state.trim().equals("adminLogined")) {
 	isAdmin = true;
 }
 
+String keys = request.getParameter("keys");
+
+List<Article> articles = new ArrayList<Article>();
+int pageIndex = 1;
+int totalPages = 0;
+int totalCount = 0;
+
 Connection conn = DB.getConn();
 
-Statement tCountStmt = DB.getStmt(conn);
-ResultSet tCountRs = DB.getRs(tCountStmt, "select count(*) from article where pid = 0");
-int totalCount = 0;
+String countSql = "select count(*) from article where (title like ? or cont like ?) and pid = 0";
+/* System.out.println(countSql); */
+
+PreparedStatement preStmt = DB.getPreStmt(conn, countSql);
+String parameterStr = "%" + keys + "%";
+/* System.out.println(parameterStr); */
+preStmt.setString(1, "%" + keys + "%");
+preStmt.setString(2, "%" + keys + "%");
+
+ResultSet tCountRs = preStmt.executeQuery();
 if(tCountRs.next()) {
 	totalCount = tCountRs.getInt(1);
 }
 DB.close(tCountRs);
-DB.close(tCountStmt);
+DB.close(preStmt);
 
 //计算总页数
-int totalPages = totalCount % PERPAGE == 0 ? totalCount/PERPAGE : (totalCount/PERPAGE + 1);
+totalPages = totalCount % PERPAGE == 0 ? totalCount/PERPAGE : (totalCount/PERPAGE + 1);
 
 String pageIndexStr = request.getParameter("pageIndex");
-int pageIndex = 1;
+
 if(pageIndexStr == null || pageIndexStr.trim().equals("")) {
 	pageIndex = 1;
 } else {
@@ -46,11 +60,11 @@ if(pageIndexStr == null || pageIndexStr.trim().equals("")) {
 	}
 }
 
-
-List<Article> articles = new ArrayList<Article>();
-String sql = "select * from article where pid = 0 limit " + ((pageIndex-1)*PERPAGE) + "," + PERPAGE;
-Statement stmt = DB.getStmt(conn);
-ResultSet rs = DB.getRs(stmt, sql);
+String sql = "select * from article where pid = 0 and (title like ? or cont like ?) limit " + ((pageIndex-1)*PERPAGE) + "," + PERPAGE;
+PreparedStatement stmt = DB.getPreStmt(conn, sql);
+stmt.setString(1, "%" + keys + "%");
+stmt.setString(2, "%" + keys + "%");
+ResultSet rs = stmt.executeQuery();
 while(rs.next()) {
 	Article article = new Article();
 	article.initArt(rs);
@@ -61,6 +75,8 @@ while(rs.next()) {
 DB.close(rs);
 DB.close(stmt);
 DB.close(conn);
+
+
 %>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html class="csdn-bbs">
@@ -262,12 +278,12 @@ DB.close(conn);
   <div class="clearfix"></div>
   <div class="page_nav">
     <ul>
-      <li class="select"> <a href="search.jsp?pageIndex=1">首页</a> </li>
-      <li class="select"> <a href="search.jsp?pageIndex=1">1</a> </li>
-      <li class=""> <a href="search.jsp?pageIndex=2">2</a> </li>
+      <li class="select"> <a href="search.jsp?pageIndex=1&keys=<%= java.net.URLEncoder.encode(keys, "utf-8")%>">首页</a> </li>
+      <li class="select"> <a href="search.jsp?pageIndex=1&keys=<%= java.net.URLEncoder.encode(keys, "utf-8")%>">1</a> </li>
+      <li class=""> <a href="search.jsp?pageIndex=2&keys=<%= java.net.URLEncoder.encode(keys, "utf-8")%>">2</a> </li>
       <li class="page gap"> ... </li>
-      <li> <a href="search.jsp?pageIndex=<%= pageIndex+1 %>" class="next">下一页</a> </li>
-      <li class=""> <a href="search.jsp?pageIndex=<%= totalPages %>">尾页</a> </li>
+      <li> <a href="search.jsp?pageIndex=<%= pageIndex+1 %>&keys=<%= java.net.URLEncoder.encode(keys, "utf-8")%>" class="next">下一页</a> </li>
+      <li class=""> <a href="search.jsp?pageIndex=<%= totalPages %>&keys=<%= java.net.URLEncoder.encode(keys, "utf-8")%>">尾页</a> </li>
       <li><span>总数：<%= totalCount %>，</span><span>共<%=totalPages %>页,第<%=pageIndex %>页</span></li>     
 	
     </ul>
